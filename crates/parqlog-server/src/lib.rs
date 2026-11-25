@@ -1,4 +1,4 @@
-//! tsd の HTTP API（axum）。
+//! parqlog の HTTP API（axum）。
 //!
 //! - 取り込み: `POST /api/v3/write_lp`（InfluxDB 3 互換）、`/api/v2/write`（v2 互換）、`/write`（v1 互換）
 //! - クエリ:   `GET /api/query`、`/api/series`、`/api/latest`、`/api/devices`、`/api/status`
@@ -22,7 +22,7 @@ use std::time::{Duration, Instant};
 use tower_http::cors::{AllowOrigin, CorsLayer};
 use tower_http::decompression::RequestDecompressionLayer;
 use tracing::{error, info, warn};
-use tsd_core::{Config, Ingestor, Store};
+use parqlog_core::{Config, Ingestor, Store};
 
 pub use auth::ListenerKind;
 pub use handlers::{local_offset_minutes, parse_offset};
@@ -77,7 +77,7 @@ pub fn router(state: SharedState, kind: ListenerKind) -> Router {
         .allow_origin(AllowOrigin::predicate(|o, _| o.to_str().map(|s| ALLOWED_ORIGINS.contains(&s)).unwrap_or(false)))
         .allow_methods([axum::http::Method::GET, axum::http::Method::POST, axum::http::Method::PUT, axum::http::Method::DELETE])
         .allow_headers([axum::http::header::CONTENT_TYPE, axum::http::header::AUTHORIZATION])
-        .expose_headers([axum::http::header::CONTENT_DISPOSITION, axum::http::HeaderName::from_static("x-tsd-rows")]);
+        .expose_headers([axum::http::header::CONTENT_DISPOSITION, axum::http::HeaderName::from_static("x-parqlog-rows")]);
 
     app.layer(middleware::from_fn_with_state(state.clone(), auth::guard))
         .layer(Extension(kind))
@@ -127,7 +127,7 @@ pub async fn serve(
                     _ = stop.recv() => break,
                 }
                 let s = store.clone();
-                let r = tokio::task::spawn_blocking(move || s.run_maintenance(tsd_core::time::now_ms())).await;
+                let r = tokio::task::spawn_blocking(move || s.run_maintenance(parqlog_core::time::now_ms())).await;
                 if let Ok(Err(e)) = r {
                     error!(error = %format!("{e:#}"), "定期ジョブでエラー");
                 }

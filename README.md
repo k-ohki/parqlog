@@ -1,4 +1,6 @@
-# tsd — 小規模な時系列データサービス（Ubuntu）
+# parqlog — 小規模な時系列データサービス（Ubuntu）
+
+> **個人的なプロジェクトです。** k-ohki が個人で開発・公開しているもので、いずれの企業・団体の製品や公式プロジェクトでもありません。動作やサポート、継続的な保守は保証しません（[MIT License](LICENSE) のとおり無保証です）。
 
 装置からのデータを受け取って保存し、Grafana 9 から見られるようにするサービスです。InfluxDB2 の代わりに使う想定で、DuckDB を組み込んだ単一バイナリで動きます。
 
@@ -11,23 +13,23 @@
 ## 構成
 
 ```
-crates/tsd-core/    ストレージ、Line Protocol、集計・保持期間、CSV 取り込み
-crates/tsd-server/  HTTP API（取り込み、クエリ、Prometheus 互換、管理）
-crates/tsd/         tsd コマンド（run / import / series / backup / check-config）
-tools/gen/          合成データ生成・性能計測
-app/                Tauri 2 の管理・簡易確認アプリ（Svelte + uPlot）
-deploy/             systemd ユニット、インストールスクリプト、Grafana の設定例
+crates/parqlog-core/    ストレージ、Line Protocol、集計・保持期間、CSV 取り込み
+crates/parqlog-server/  HTTP API（取り込み、クエリ、Prometheus 互換、管理）
+crates/parqlog/         parqlog コマンド（run / import / series / backup / check-config）
+tools/gen/              合成データ生成・性能計測（parqlog-gen）
+app/                    Tauri 2 の管理・簡易確認アプリ（Svelte + uPlot）
+deploy/                 systemd ユニット、インストールスクリプト、Grafana の設定例
 ```
 
 ## インストール（Ubuntu）
 
 ```sh
 sudo apt install build-essential pkg-config     # DuckDB の C++ ビルド用
-cargo build --release -p tsd                     # 初回は 15〜30 分
-sudo sh deploy/install.sh                        # /usr/local/bin/tsd、/etc/tsd/tsd.toml、/var/lib/tsd、systemd 登録
+cargo build --release -p parqlog                 # 初回は 15〜30 分
+sudo sh deploy/install.sh                        # /usr/local/bin/parqlog、/etc/parqlog/parqlog.toml、/var/lib/parqlog、systemd 登録
 ```
 
-ログは `journalctl -u tsd -f`。詳しく出すときは `systemctl edit tsd` で `Environment=TSD_LOG=debug`。
+ログは `journalctl -u parqlog -f`。詳しく出すときは `systemctl edit parqlog` で `Environment=PARQLOG_LOG=debug`。
 
 ## データを入れる
 
@@ -37,22 +39,22 @@ sudo sh deploy/install.sh                        # /usr/local/bin/tsd、/etc/tsd
 [[outputs.influxdb_v2]]
   urls = ["http://127.0.0.1:8086"]
   token = ""          # ローカルからは不要
-  organization = "tsd"
-  bucket = "tsd"
+  organization = "parqlog"
+  bucket = "parqlog"
 ```
 
 `outputs.influxdb_v3`（`/api/v3/write_lp`、時刻の精度は自動判定）も使えます。`database` は無視して1つの DB に保存します。
 
-他の PC から送るときは `/etc/tsd/tsd.toml` で `http.ingest_listen = "0.0.0.0:8087"` とトークンを設定し、ufw でポートを開けます。
+他の PC から送るときは `/etc/parqlog/parqlog.toml` で `http.ingest_listen = "0.0.0.0:8087"` とトークンを設定し、ufw でポートを開けます。
 
 ### CSV
 
 ```sh
 # wide 形式: 1列目が時刻、残りの列がそれぞれ系列になる（列名 = 項目名）
-tsd import 炉1_2026-11.csv --measurement furnace --tag device=炉1
+parqlog import 炉1_2026-11.csv --measurement furnace --tag device=炉1
 
-# long 形式: 時刻,系列キー,値（tsd のエクスポートと同じ形）
-tsd import export.csv --layout long
+# long 形式: 時刻,系列キー,値（parqlog のエクスポートと同じ形）
+parqlog import export.csv --layout long
 ```
 
 - 時刻は `2026/11/25 14:00:00`、`2026-11-25T14:00:00+09:00`、エポック秒・ミリ秒のどれでも読めます。タイムゾーンの無い日時はこの PC の地方時（`--utc-offset +09:00` で指定可）。列名が `_utc` で終わる列は UTC として扱います。
@@ -63,9 +65,9 @@ tsd import export.csv --layout long
 ## 系列の名前変更・削除
 
 ```sh
-tsd series list 炉温                                   # ID と系列キーの一覧（部分一致）
-tsd series rename 12 'furnace,device=炉1 炉温'          # キーを変える（データはそのまま）
-tsd series delete 13 14                                # 削除（確認あり。--yes で省略）
+parqlog series list 炉温                                   # ID と系列キーの一覧（部分一致）
+parqlog series rename 12 'furnace,device=炉1 炉温'          # キーを変える（データはそのまま）
+parqlog series delete 13 14                                # 削除（確認あり。--yes で省略）
 ```
 
 - 名前変更は ID を変えずにキーだけを書き換えるので、過去データもそのまま引き継ぎます。送信側が古い名前で送り続けると古い名前の系列が新しく作られるので、送信側も直してください。
@@ -127,7 +129,7 @@ cd app/ui && npm ci && cd ../src-tauri && npx --prefix ../ui tauri build   # .de
 
 本体は InfluxDB 3 と同じく Rust で、考え方も近い構成です（Line Protocol で受けて直近をメモリと DB に持ち、確定分を日単位の Parquet にする）。違いは次のとおりです。
 
-| | InfluxDB 3 Core | tsd |
+| | InfluxDB 3 Core | parqlog |
 | --- | --- | --- |
 | クエリエンジン | DataFusion（SQL / InfluxQL） | DuckDB（組み込み） |
 | 長期間の集計 | 圧縮・集計は Enterprise の機能 | 1分・1時間のロールアップを持ち、5年分でも1秒以内に表示 |
@@ -162,3 +164,7 @@ cd app/ui && npm ci && cd ../src-tauri && npx --prefix ../ui tauri build   # .de
 ```sh
 cargo test --workspace
 ```
+
+## ライセンス
+
+[MIT License](LICENSE)。依存ライブラリ（DuckDB、axum、Tauri、Svelte、uPlot など）はそれぞれのライセンス（MIT / Apache-2.0 など）に従います。

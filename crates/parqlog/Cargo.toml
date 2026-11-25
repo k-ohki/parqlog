@@ -1,17 +1,17 @@
 [package]
-name = "tsd"
+name = "parqlog"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 description = "時系列データの収集・保存・クエリを行うサービス"
 
 [[bin]]
-name = "tsd"
+name = "parqlog"
 path = "src/main.rs"
 
 [dependencies]
-tsd-core = { path = "../tsd-core" }
-tsd-server = { path = "../tsd-server" }
+parqlog-core = { path = "../parqlog-core" }
+parqlog-server = { path = "../parqlog-server" }
 anyhow.workspace = true
 clap.workspace = true
 tokio.workspace = true

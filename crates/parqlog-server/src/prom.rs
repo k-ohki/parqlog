@@ -24,8 +24,8 @@ use axum::{Json, Router};
 use regex::Regex;
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, BTreeSet};
-use tsd_core::time::{now_ms, parse_duration, MIN};
-use tsd_core::{AggQuery, Series, SeriesFilter, SeriesId};
+use parqlog_core::time::{now_ms, parse_duration, MIN};
+use parqlog_core::{AggQuery, Series, SeriesFilter, SeriesId};
 
 pub fn routes() -> Router<SharedState> {
     Router::new()
@@ -38,7 +38,7 @@ pub fn routes() -> Router<SharedState> {
         .route("/api/v1/query_exemplars", get(|| async { ok(json!([])) }).post(|| async { ok(json!([])) }))
         .route(
             "/api/v1/status/buildinfo",
-            get(|| async { ok(json!({ "version": "2.40.0", "revision": "tsd", "branch": "tsd" })) }),
+            get(|| async { ok(json!({ "version": "2.40.0", "revision": "parqlog", "branch": "parqlog" })) }),
         )
 }
 

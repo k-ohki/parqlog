@@ -25,7 +25,7 @@
 
 <div class="shell">
   <nav>
-    <div class="brand"><span class="logo"></span>TSD</div>
+    <div class="brand"><span class="logo"></span>parqlog</div>
     {#each NAV as n}
       <button class:active={app.page === n.page} onclick={() => go(n.page)}>
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d={n.icon} /></svg>

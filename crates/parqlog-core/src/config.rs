@@ -76,7 +76,7 @@ pub struct MonitorConfig {
 
 /// 設定ファイルの既定の場所
 pub fn default_config_path() -> PathBuf {
-    PathBuf::from("/etc/tsd/tsd.toml")
+    PathBuf::from("/etc/parqlog/parqlog.toml")
 }
 
 impl Default for HttpConfig {
@@ -98,7 +98,7 @@ impl Default for AuthConfig {
 impl Default for StorageConfig {
     fn default() -> Self {
         Self {
-            data_dir: "/var/lib/tsd".into(),
+            data_dir: "/var/lib/parqlog".into(),
             memory_limit: "1GB".into(),
             threads: 0,
         }

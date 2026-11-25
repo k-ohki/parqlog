@@ -1,11 +1,11 @@
 [package]
-name = "tsd-server"
+name = "parqlog-server"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
-tsd-core = { path = "../tsd-core" }
+parqlog-core = { path = "../parqlog-core" }
 anyhow.workspace = true
 axum.workspace = true
 tokio.workspace = true

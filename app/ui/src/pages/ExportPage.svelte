@@ -34,7 +34,7 @@
     busy = true;
     try {
       const stamp = fromStr.slice(0, 10).replace(/-/g, "");
-      const name = `tsd-${stamp}-${effTier}.${format}`;
+      const name = `parqlog-${stamp}-${effTier}.${format}`;
       if (isTauri) {
         const path = await saveDialog(name, format);
         if (!path) return;

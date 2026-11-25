@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/tsd-core", "crates/tsd-server", "crates/tsd", "tools/gen"]
+members = ["crates/parqlog-core", "crates/parqlog-server", "crates/parqlog", "tools/gen"]
 # app/src-tauri は Windows 専用ビルドのため別ワークスペース扱い（app/src-tauri/Cargo.toml を参照）
 exclude = ["app/src-tauri"]
 

@@ -1,10 +1,10 @@
-//! systemd のサービス（tsd.service）の状態取得と操作。
+//! systemd のサービス（parqlog.service）の状態取得と操作。
 //! 開始・停止は pkexec（polkit の認証ダイアログ）で systemctl を実行する。
 
 use serde::Serialize;
 use std::process::Command;
 
-pub const UNIT: &str = "tsd.service";
+pub const UNIT: &str = "parqlog.service";
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct ServiceInfo {

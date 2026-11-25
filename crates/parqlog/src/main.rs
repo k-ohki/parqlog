@@ -1,12 +1,12 @@
-//! tsd — 時系列データサービス
+//! parqlog — 時系列データサービス
 //!
 //! ```text
-//! tsd run                         サービス本体（systemd から起動。Ctrl+C / SIGTERM で停止）
-//! tsd import FILE...              CSV を取り込む（稼働中は API 経由、停止中は直接）
-//! tsd backup --dest DIR           バックアップ（同上）
-//! tsd series list|rename|delete   系列の一覧・名前変更・削除（同上）
-//! tsd check-config | init-config  設定ファイルの検証・既定値での作成
-//! tsd apply-config --from FILE    設定ファイルを検証して反映（管理アプリから pkexec で呼ぶ）
+//! parqlog run                         サービス本体（systemd から起動。Ctrl+C / SIGTERM で停止）
+//! parqlog import FILE...              CSV を取り込む（稼働中は API 経由、停止中は直接）
+//! parqlog backup --dest DIR           バックアップ（同上）
+//! parqlog series list|rename|delete   系列の一覧・名前変更・削除（同上）
+//! parqlog check-config | init-config  設定ファイルの検証・既定値での作成
+//! parqlog apply-config --from FILE    設定ファイルを検証して反映（管理アプリから pkexec で呼ぶ）
 //! ```
 
 mod logging;
@@ -16,12 +16,12 @@ use clap::{Parser, Subcommand, ValueEnum};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
-use tsd_core::{Config, CsvImportOptions, CsvLayout, DuckStore, Store};
+use parqlog_core::{Config, CsvImportOptions, CsvLayout, DuckStore, Store};
 
 #[derive(Parser)]
-#[command(name = "tsd", version, about = "時系列データの収集・保存・クエリを行うサービス")]
+#[command(name = "parqlog", version, about = "時系列データの収集・保存・クエリを行うサービス")]
 struct Cli {
-    /// 設定ファイル（既定: /etc/tsd/tsd.toml）
+    /// 設定ファイル（既定: /etc/parqlog/parqlog.toml）
     #[arg(long, global = true)]
     config: Option<PathBuf>,
     #[command(subcommand)]
@@ -83,7 +83,7 @@ enum Cmd {
 enum SeriesCmd {
     /// 一覧（ID と系列キー）。QUERY でキーを部分一致検索
     List { query: Option<String> },
-    /// 系列キーを変える（データはそのまま）。例: tsd series rename 12 'plc,device=dev01 temp'
+    /// 系列キーを変える（データはそのまま）。例: parqlog series rename 12 'plc,device=dev01 temp'
     Rename { id: u32, key: String },
     /// 系列を削除する
     Delete {
@@ -103,7 +103,7 @@ fn main() {
 }
 
 fn config_path(cli: &Cli) -> PathBuf {
-    let p = cli.config.clone().unwrap_or_else(tsd_core::config::default_config_path);
+    let p = cli.config.clone().unwrap_or_else(parqlog_core::config::default_config_path);
     if p.is_relative() {
         std::env::current_dir().map(|d| d.join(&p)).unwrap_or(p)
     } else {
@@ -117,7 +117,7 @@ fn real_main(cli: Cli) -> Result<()> {
         Cmd::Run => {
             logging::init();
             let cfg = Config::load_or_default(&path)?;
-            tracing::info!(config = %path.display(), exists = path.exists(), "tsd {} を起動", tsd_core::VERSION);
+            tracing::info!(config = %path.display(), exists = path.exists(), "parqlog {} を起動", parqlog_core::VERSION);
             run_server(cfg, path)
         }
         Cmd::Import { files, layout, measurement, tags, time_column, utc_offset } => {
@@ -131,8 +131,8 @@ fn real_main(cli: Cli) -> Result<()> {
                 tag_pairs.push((k.to_string(), v.to_string()));
             }
             let offset = match &utc_offset {
-                Some(s) => tsd_server::parse_offset(s).with_context(|| format!("--utc-offset が不正です: {s}"))?,
-                None => tsd_server::local_offset_minutes(),
+                Some(s) => parqlog_server::parse_offset(s).with_context(|| format!("--utc-offset が不正です: {s}"))?,
+                None => parqlog_server::local_offset_minutes(),
             };
             for f in &files {
                 let opt = CsvImportOptions {
@@ -192,10 +192,10 @@ fn real_main(cli: Cli) -> Result<()> {
 
 fn run_server(cfg: Config, path: PathBuf) -> Result<()> {
     let store = Arc::new(DuckStore::open(cfg.store_options())?);
-    let rt = tokio::runtime::Builder::new_multi_thread().enable_all().thread_name("tsd-http").build()?;
+    let rt = tokio::runtime::Builder::new_multi_thread().enable_all().thread_name("parqlog-http").build()?;
     let data_dir = cfg.data_dir();
     let store: Arc<dyn Store> = store;
-    rt.block_on(tsd_server::serve(cfg, path, store, data_dir, async {
+    rt.block_on(parqlog_server::serve(cfg, path, store, data_dir, async {
         use tokio::signal::unix::{signal, SignalKind};
         let mut term = signal(SignalKind::terminate()).expect("SIGTERM を待てません");
         tokio::select! {
@@ -308,7 +308,7 @@ fn series(cfg: &Config, cmd: SeriesCmd) -> Result<()> {
     let t = target(cfg)?;
     match cmd {
         SeriesCmd::List { query } => {
-            let list: Vec<tsd_core::Series> = match &t {
+            let list: Vec<parqlog_core::Series> = match &t {
                 Target::Api => {
                     let mut r = agent().get(api_url(cfg, "/api/series"));
                     if let Some(q) = &query {
@@ -316,7 +316,7 @@ fn series(cfg: &Config, cmd: SeriesCmd) -> Result<()> {
                     }
                     serde_json::from_str(&api_call(r.call())?)?
                 }
-                Target::Direct(s) => s.list_series(&tsd_core::SeriesFilter { q: query, ..Default::default() })?,
+                Target::Direct(s) => s.list_series(&parqlog_core::SeriesFilter { q: query, ..Default::default() })?,
             };
             for s in &list {
                 println!("{:>6}  {}{}", s.id, s.key, s.unit.as_deref().map(|u| format!("  [{u}]")).unwrap_or_default());
@@ -327,7 +327,7 @@ fn series(cfg: &Config, cmd: SeriesCmd) -> Result<()> {
             let new_key = match &t {
                 Target::Api => {
                     let body = api_call(agent().put(api_url(cfg, &format!("/api/series/{id}"))).send_json(serde_json::json!({ "key": key })))?;
-                    serde_json::from_str::<tsd_core::Series>(&body)?.key
+                    serde_json::from_str::<parqlog_core::Series>(&body)?.key
                 }
                 Target::Direct(s) => s.rename_series(id, &key)?.key,
             };

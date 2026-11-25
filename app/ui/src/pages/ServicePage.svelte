@@ -115,7 +115,7 @@
               <button onclick={() => run("停止", native.serviceStop, "サービスを停止すると、その間のデータは受信できません（送信側が再送しない場合は欠測になります）。停止しますか？")} disabled={!!busy || svc.state === "stopped"}>停止</button>
               <button onclick={() => run("再起動", native.serviceRestart)} disabled={!!busy}>再起動</button>
             {:else}
-              <p class="muted">tsd.service が登録されていません（README の手順で systemd に登録してください）。</p>
+              <p class="muted">parqlog.service が登録されていません（README の手順で systemd に登録してください）。</p>
             {/if}
           </div>
           {#if busy}<p class="muted">{busy}中…</p>{/if}
@@ -210,7 +210,7 @@
         <h2>バックアップ</h2>
         <p class="muted">DB をチェックポイントしてから複製し、Parquet ファイルは差分だけコピーします。</p>
         <div class="row">
-          <input class="grow" bind:value={backupDest} placeholder="バックアップ先フォルダ（例: /mnt/backup/tsd）" />
+          <input class="grow" bind:value={backupDest} placeholder="バックアップ先フォルダ（例: /mnt/backup/parqlog）" />
           <button onclick={backup} disabled={!!busy || !backupDest.trim()}>実行</button>
         </div>
       </section>
@@ -218,7 +218,7 @@
 
     {#if isTauri}
       <section class="card">
-        <h2>ログ（journalctl -u tsd）</h2>
+        <h2>ログ（journalctl -u parqlog）</h2>
         <div class="row">
           <button onclick={loadLogs}>再読み込み</button>
           <label class="chk"><input type="checkbox" bind:checked={logAuto} /> 自動更新</label>

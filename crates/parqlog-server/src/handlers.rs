@@ -11,10 +11,10 @@ use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::{Duration, Instant};
-use tsd_core::ingest::IngestError;
-use tsd_core::lp::Precision;
-use tsd_core::time::{now_ms, parse_time, HOUR};
-use tsd_core::*;
+use parqlog_core::ingest::IngestError;
+use parqlog_core::lp::Precision;
+use parqlog_core::time::{now_ms, parse_time, HOUR};
+use parqlog_core::*;
 
 type ApiResult = Result<Response, Response>;
 
@@ -125,12 +125,12 @@ async fn write_impl(st: SharedState, acc: Access, precision: &str, accept_partia
 
 pub async fn ping() -> Response {
     let mut r = StatusCode::NO_CONTENT.into_response();
-    r.headers_mut().insert("X-Influxdb-Version", "tsd".parse().unwrap());
+    r.headers_mut().insert("X-Influxdb-Version", "parqlog".parse().unwrap());
     r
 }
 
 pub async fn health() -> Response {
-    Json(serde_json::json!({ "name": "tsd", "status": "pass", "version": VERSION })).into_response()
+    Json(serde_json::json!({ "name": "parqlog", "status": "pass", "version": VERSION })).into_response()
 }
 
 // ---- クエリ ---------------------------------------------------------------
@@ -312,7 +312,7 @@ fn disk_info(st: &SharedState) -> DiskInfo {
         }
     }
     let mut d = DiskInfo::default();
-    for f in tsd_core::duck::walk_files(&st.data_dir) {
+    for f in parqlog_core::duck::walk_files(&st.data_dir) {
         let len = std::fs::metadata(&f).map(|m| m.len()).unwrap_or(0);
         d.data_bytes += len;
         d.file_count += 1;
@@ -441,9 +441,9 @@ pub async fn export(State(st): State<SharedState>, Json(b): Json<ExportBody>) ->
         None => {
             // auto: 1日以内なら生データ、1か月以内なら1分、それ以上は1時間
             let span = to - from;
-            if span <= tsd_core::time::DAY {
+            if span <= parqlog_core::time::DAY {
                 Tier::Raw
-            } else if span <= 31 * tsd_core::time::DAY {
+            } else if span <= 31 * parqlog_core::time::DAY {
                 Tier::M1
             } else {
                 Tier::H1
@@ -470,7 +470,7 @@ pub async fn export(State(st): State<SharedState>, Json(b): Json<ExportBody>) ->
     let file = tokio::fs::File::open(&path).await.map_err(internal)?;
     let len = file.metadata().await.map(|m| m.len()).unwrap_or(0);
     let stream = TempFileStream { inner: tokio_util::io::ReaderStream::with_capacity(file, 256 * 1024), _guard: TempGuard(path) };
-    let name = format!("tsd-{}-{}.{ext}", tsd_core::time::day_str(from), tier.name());
+    let name = format!("parqlog-{}-{}.{ext}", parqlog_core::time::day_str(from), tier.name());
     Ok(Response::builder()
         .header(
             header::CONTENT_TYPE,
@@ -478,7 +478,7 @@ pub async fn export(State(st): State<SharedState>, Json(b): Json<ExportBody>) ->
         )
         .header(header::CONTENT_LENGTH, len)
         .header(header::CONTENT_DISPOSITION, format!("attachment; filename=\"{name}\""))
-        .header("X-Tsd-Rows", rows)
+        .header("X-Parqlog-Rows", rows)
         .body(Body::from_stream(stream))
         .map_err(internal)?)
 }
@@ -505,7 +505,7 @@ pub async fn backup(State(st): State<SharedState>, Extension(acc): Extension<Acc
     }
     let dest = PathBuf::from(b.dest.trim());
     if !dest.is_absolute() {
-        return Err(bad("バックアップ先は絶対パス（例: /mnt/backup/tsd）で指定してください"));
+        return Err(bad("バックアップ先は絶対パス（例: /mnt/backup/parqlog）で指定してください"));
     }
     let store = st.store.clone();
     let rep = blocking(move || store.backup(&dest)).await?;

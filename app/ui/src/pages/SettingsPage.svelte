@@ -69,8 +69,8 @@
     return `[[outputs.influxdb_v2]]
   urls = ["http://${host}:${port}"]
   token = "${tok.token}"
-  organization = "tsd"
-  bucket = "tsd"`;
+  organization = "parqlog"
+  bucket = "parqlog"`;
   }
 
   async function save() {

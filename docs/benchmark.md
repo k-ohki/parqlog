@@ -5,7 +5,7 @@ Windows 実機・リリースビルドではこれ以上の速度が見込めま
 
 ## データ
 
-`tsd-gen backfill` で 100 系列（装置10台 × 10項目、1Hz）を生成。
+`parqlog-gen backfill` で 100 系列（装置10台 × 10項目、1Hz）を生成。
 
 | 層 | 期間 | 備考 |
 | --- | --- | --- |
@@ -41,7 +41,7 @@ Parquet V2 の DELTA_BINARY_PACKED で時刻列がほぼ 0 バイトになるた
 | 1日（16bit の日） | 生データ | 54秒 | 43 ms | 0.3 秒 |
 | 1時間 | 生データ | 3秒 | 17 ms | — |
 
-## 取り込み（`tsd-gen bench`、4並列、1リクエスト 5,000 行）
+## 取り込み（`parqlog-gen bench`、4並列、1リクエスト 5,000 行）
 
 | 条件 | 受け付け速度 |
 | --- | --- |
@@ -54,7 +54,7 @@ Parquet V2 の DELTA_BINARY_PACKED で時刻列がほぼ 0 バイトになるた
 
 ```sh
 cargo build --workspace --all-targets
-target/debug/tsd-gen backfill --data-dir ./bench/data --raw-days 21 --compact-after-days 14 --m1-days 400 --h1-days 1826
-target/debug/tsd run --config ./bench/tsd.toml      # storage.data_dir = ./bench/data
-target/debug/tsd-gen bench --points 2000000
+target/debug/parqlog-gen backfill --data-dir ./bench/data --raw-days 21 --compact-after-days 14 --m1-days 400 --h1-days 1826
+target/debug/parqlog run --config ./bench/parqlog.toml      # storage.data_dir = ./bench/data
+target/debug/parqlog-gen bench --points 2000000
 ```

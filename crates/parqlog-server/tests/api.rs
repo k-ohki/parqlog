@@ -8,8 +8,8 @@ use std::io::Write;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tower::ServiceExt;
-use tsd_core::{Config, DuckStore, Store, StoreOptions};
-use tsd_server::{build_state, router, ListenerKind, SharedState};
+use parqlog_core::{Config, DuckStore, Store, StoreOptions};
+use parqlog_server::{build_state, router, ListenerKind, SharedState};
 
 struct Env {
     _dir: tempfile::TempDir,
@@ -21,12 +21,12 @@ fn env(tokens: bool) -> Env {
     let mut cfg = Config::default();
     cfg.storage.data_dir = dir.path().join("data").to_string_lossy().into();
     if tokens {
-        cfg.auth.tokens.push(tsd_core::config::Token { name: "t".into(), token: "0123456789abcdef-token".into() });
+        cfg.auth.tokens.push(parqlog_core::config::Token { name: "t".into(), token: "0123456789abcdef-token".into() });
     }
     let mut o = StoreOptions::for_dir(cfg.data_dir());
     o.memory_limit = "256MB".into();
     let store: Arc<dyn Store> = Arc::new(DuckStore::open(o).unwrap());
-    let st = build_state(cfg.clone(), dir.path().join("tsd.toml"), store, cfg.data_dir()).unwrap();
+    let st = build_state(cfg.clone(), dir.path().join("parqlog.toml"), store, cfg.data_dir()).unwrap();
     Env { _dir: dir, st }
 }
 
@@ -67,7 +67,7 @@ const LAN: &str = "192.168.1.20:50000";
 #[tokio::test]
 async fn write_query_and_metadata() {
     let e = env(false);
-    let now = tsd_core::time::now_ms() / 1000;
+    let now = parqlog_core::time::now_ms() / 1000;
     let mut body = String::new();
     for i in 0..60 {
         body.push_str(&format!("plc,device=a temp={},hum={}i {}\n", 20 + i % 3, 40 + i % 5, now - 60 + i));
@@ -134,7 +134,7 @@ async fn write_query_and_metadata() {
     )
     .await;
     assert_eq!(s, StatusCode::OK, "{}", String::from_utf8_lossy(&b));
-    assert_eq!(h.get("x-tsd-rows").unwrap(), "60");
+    assert_eq!(h.get("x-parqlog-rows").unwrap(), "60");
     let text = String::from_utf8(b).unwrap();
     assert!(text.starts_with("time_utc,series,value"));
     assert_eq!(text.lines().count(), 61);
@@ -143,7 +143,7 @@ async fn write_query_and_metadata() {
 #[tokio::test]
 async fn bad_lines_give_400_with_line_number_but_keep_good_lines() {
     let e = env(false);
-    let now = tsd_core::time::now_ms() / 1000;
+    let now = parqlog_core::time::now_ms() / 1000;
     let body = format!("m v=1 {now}\nm v= {now}\nm v=3 {}\n", now + 1);
     let (s, _, b) = call(&e.st, ListenerKind::Api, LOCAL, write_req(body, false)).await;
     assert_eq!(s, StatusCode::BAD_REQUEST);
@@ -157,7 +157,7 @@ async fn bad_lines_give_400_with_line_number_but_keep_good_lines() {
 #[tokio::test]
 async fn v3_write_lp_auto_precision_and_accept_partial() {
     let e = env(false);
-    let now_s = tsd_core::time::now_ms() / 1000;
+    let now_s = parqlog_core::time::now_ms() / 1000;
     // 秒・ミリ秒・ナノ秒が混ざっていても precision=auto で読める
     let body = format!("m,device=x v=1 {now_s}\nm,device=x v=2 {}\nm,device=x v=3 {}\n", (now_s + 1) * 1000, (now_s + 2) * 1_000_000_000);
     let req = Request::builder().method("POST").uri("/api/v3/write_lp?db=sensors").body(Body::from(body)).unwrap();
@@ -180,7 +180,7 @@ async fn v3_write_lp_auto_precision_and_accept_partial() {
 #[tokio::test]
 async fn series_rename_and_delete() {
     let e = env(true);
-    let now_s = tsd_core::time::now_ms() / 1000;
+    let now_s = parqlog_core::time::now_ms() / 1000;
     let body = format!("plc,device=dev1 temp=1 {now_s}\nplc,device=dev02 temp=2 {now_s}\n");
     let (s, _, _) = call(&e.st, ListenerKind::Api, LOCAL, write_req(body, false)).await;
     assert_eq!(s, StatusCode::NO_CONTENT);
@@ -225,7 +225,7 @@ async fn series_rename_and_delete() {
 #[tokio::test]
 async fn csv_import_via_api() {
     let e = env(true);
-    let t = (tsd_core::time::now_ms() / 60_000 - 10) * 60_000;
+    let t = (parqlog_core::time::now_ms() / 60_000 - 10) * 60_000;
     let mut csv = String::from("time_utc,温度,圧力\n");
     for i in 0..30 {
         csv.push_str(&format!("{},{},101.3\n", t + i * 1000, 20 + i));
@@ -264,7 +264,7 @@ fn form(uri: &str, body: &str) -> Request<Body> {
 #[tokio::test]
 async fn prometheus_api_for_grafana() {
     let e = env(false);
-    let now_s = tsd_core::time::now_ms() / 1000;
+    let now_s = parqlog_core::time::now_ms() / 1000;
     let mut body = String::new();
     for i in 0..120 {
         let ts = now_s - 120 + i;
@@ -367,7 +367,7 @@ async fn access_control() {
     assert_eq!(s, StatusCode::FORBIDDEN);
 
     // 取り込み専用ポート: ローカルからでもトークン必須、クエリは存在しない
-    let now = tsd_core::time::now_ms() / 1000;
+    let now = parqlog_core::time::now_ms() / 1000;
     let (s, _, _) = call(&e.st, ListenerKind::Ingest, LOCAL, write_req(format!("m v=1 {now}"), false)).await;
     assert_eq!(s, StatusCode::UNAUTHORIZED);
     let req = Request::builder()

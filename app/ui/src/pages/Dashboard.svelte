@@ -11,7 +11,7 @@
   import PanelEditor from "../components/PanelEditor.svelte";
   import Modal from "../components/Modal.svelte";
 
-  const LAST_KEY = "tsd.dashboard";
+  const LAST_KEY = "parqlog.dashboard";
   const REFRESH = [0, 1, 2, 5, 10, 30, 60];
 
   let list = $state<DashboardInfo[]>([]);

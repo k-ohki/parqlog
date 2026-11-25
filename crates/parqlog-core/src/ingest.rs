@@ -98,7 +98,7 @@ impl Ingestor {
         let st = store.clone();
         let sh2 = sh.clone();
         let th = std::thread::Builder::new()
-            .name("tsd-ingest".into())
+            .name("parqlog-ingest".into())
             .spawn(move || flusher(st, sh2))
             .expect("取り込みスレッドを起動できません");
         Arc::new(Self { store, sh, thread: Mutex::new(Some(th)) })

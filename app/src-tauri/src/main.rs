@@ -1,4 +1,4 @@
 
 fn main() {
-    tsd_app_lib::run()
+    parqlog_app_lib::run()
 }

@@ -1358,6 +1358,74 @@ dependencies = [
 ]
 
 [[package]]
+name = "parqlog"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "parqlog-core",
+ "parqlog-server",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "ureq",
+]
+
+[[package]]
+name = "parqlog-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "duckdb",
+ "parking_lot",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "toml",
+ "tracing",
+]
+
+[[package]]
+name = "parqlog-gen"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "flate2",
+ "parqlog-core",
+ "ureq",
+]
+
+[[package]]
+name = "parqlog-server"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64 0.22.1",
+ "chrono",
+ "flate2",
+ "fs4",
+ "futures-core",
+ "http-body-util",
+ "parking_lot",
+ "parqlog-core",
+ "regex",
+ "serde",
+ "serde_json",
+ "serde_urlencoded",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+ "tower",
+ "tower-http",
+ "tracing",
+]
+
+[[package]]
 name = "percent-encoding"
 version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2039,74 +2107,6 @@ dependencies = [
  "tracing",
  "tracing-core",
  "tracing-log",
-]
-
-[[package]]
-name = "tsd"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "serde_json",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "tsd-core",
- "tsd-server",
- "ureq",
-]
-
-[[package]]
-name = "tsd-core"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "duckdb",
- "parking_lot",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror",
- "toml",
- "tracing",
-]
-
-[[package]]
-name = "tsd-gen"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "flate2",
- "tsd-core",
- "ureq",
-]
-
-[[package]]
-name = "tsd-server"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum",
- "base64 0.22.1",
- "chrono",
- "flate2",
- "fs4",
- "futures-core",
- "http-body-util",
- "parking_lot",
- "regex",
- "serde",
- "serde_json",
- "serde_urlencoded",
- "tempfile",
- "tokio",
- "tokio-util",
- "tower",
- "tower-http",
- "tracing",
- "tsd-core",
 ]
 
 [[package]]

@@ -169,7 +169,7 @@
       ms: 1,
       legend: { show: false },
       cursor: {
-        sync: { key: "tsd" },
+        sync: { key: "parqlog" },
         drag: { x: true, y: false, setScale: false },
         points: { size: 7 },
       },

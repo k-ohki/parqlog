@@ -1,15 +1,15 @@
 [package]
-name = "tsd-app"
+name = "parqlog-app"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-description = "TSD 管理・簡易確認アプリ（Tauri 2）"
+description = "parqlog 管理・簡易確認アプリ（Tauri 2）"
 
-# ルートのワークスペースとは別に単独でビルドする（Tauri の依存を tsd-core と混ぜない）
+# ルートのワークスペースとは別に単独でビルドする（Tauri の依存を parqlog-core と混ぜない）
 [workspace]
 
 [lib]
-name = "tsd_app_lib"
+name = "parqlog_app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

@@ -1,4 +1,4 @@
-//! tsd のコア: Line Protocol、ストレージ（DuckDB + Parquet）、集計、保持期間管理。
+//! parqlog のコア: Line Protocol、ストレージ（DuckDB + Parquet）、集計、保持期間管理。
 
 pub mod config;
 pub mod duck;

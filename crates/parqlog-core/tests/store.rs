@@ -1,8 +1,8 @@
 //! ストレージの結合テスト。時刻は引数で与えて、数日〜数か月の経過を再現する。
 
-use tsd_core::lp::series_key;
-use tsd_core::time::*;
-use tsd_core::*;
+use parqlog_core::lp::series_key;
+use parqlog_core::time::*;
+use parqlog_core::*;
 
 fn key(dev: &str, field: &str) -> String {
     series_key("plc", &[("device".to_string(), dev.to_string())], field)

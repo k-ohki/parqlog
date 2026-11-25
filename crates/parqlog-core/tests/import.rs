@@ -1,8 +1,8 @@
 //! CSV 取り込みのテスト
 
-use tsd_core::lp::series_key;
-use tsd_core::time::*;
-use tsd_core::*;
+use parqlog_core::lp::series_key;
+use parqlog_core::time::*;
+use parqlog_core::*;
 
 fn opts(dir: &std::path::Path) -> StoreOptions {
     let mut o = StoreOptions::for_dir(dir);

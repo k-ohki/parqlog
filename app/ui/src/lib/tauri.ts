@@ -39,7 +39,7 @@ export async function saveDialog(defaultPath: string, ext: string): Promise<stri
   return save({ defaultPath, filters: [{ name: ext.toUpperCase(), extensions: [ext] }] });
 }
 
-export async function confirmDialog(message: string, title = "TSD"): Promise<boolean> {
+export async function confirmDialog(message: string, title = "parqlog"): Promise<boolean> {
   if (!isTauri) return window.confirm(message);
   const { ask } = await import("@tauri-apps/plugin-dialog");
   return ask(message, { title, kind: "warning" });

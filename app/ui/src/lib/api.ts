@@ -1,4 +1,4 @@
-// tsd.exe の HTTP API クライアント
+// parqlog の HTTP API クライアント
 import { isTauri, native } from "./tauri";
 
 export type SeriesId = number;
@@ -114,7 +114,7 @@ export class ApiError extends Error {
 
 let base = "";
 
-const DASH_KEY = "tsd.dashboards";
+const DASH_KEY = "parqlog.dashboards";
 function dashStore(): Record<string, any> {
   try {
     return JSON.parse(localStorage.getItem(DASH_KEY) ?? "{}") ?? {};

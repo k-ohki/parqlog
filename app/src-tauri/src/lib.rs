@@ -1,6 +1,6 @@
-//! TSD デスクトップアプリ（Tauri 2）
+//! parqlog デスクトップアプリ（Tauri 2）
 //!
-//! データはすべて tsd.exe の HTTP API から画面（WebView）が直接取得する。
+//! データはすべて parqlog の HTTP API から画面（WebView）が直接取得する。
 //! Rust 側は OS に関わる操作（systemd の操作、設定ファイル、ログ、ファイルの読み書き、タスクトレイ）だけを担う。
 
 mod service;
@@ -18,7 +18,7 @@ use tauri::{AppHandle, Manager, WindowEvent};
 // ---- 設定ファイルの場所と API の URL -----------------------------------------
 
 fn config_path() -> PathBuf {
-    std::env::var("TSD_CONFIG").map(PathBuf::from).unwrap_or_else(|_| PathBuf::from("/etc/tsd/tsd.toml"))
+    std::env::var("PARQLOG_CONFIG").map(PathBuf::from).unwrap_or_else(|_| PathBuf::from("/etc/parqlog/parqlog.toml"))
 }
 
 fn read_config_file() -> Option<toml::Value> {
@@ -30,7 +30,7 @@ fn cfg_str(cfg: &Option<toml::Value>, section: &str, key: &str) -> Option<String
 }
 
 fn api_base_url() -> String {
-    if let Ok(u) = std::env::var("TSD_API") {
+    if let Ok(u) = std::env::var("PARQLOG_API") {
         return u;
     }
     let listen = cfg_str(&read_config_file(), "http", "listen").unwrap_or_else(|| "127.0.0.1:8086".into());
@@ -38,10 +38,10 @@ fn api_base_url() -> String {
     format!("http://{listen}")
 }
 
-/// PATH から tsd を探す（pkexec には絶対パスが必要）
-fn tsd_exe() -> Option<PathBuf> {
+/// PATH から parqlog を探す（pkexec には絶対パスが必要）
+fn parqlog_exe() -> Option<PathBuf> {
     std::env::var_os("PATH")
-        .and_then(|p| std::env::split_paths(&p).map(|d| d.join("tsd")).find(|f| f.is_file()))
+        .and_then(|p| std::env::split_paths(&p).map(|d| d.join("parqlog")).find(|f| f.is_file()))
 }
 
 fn agent(timeout: Duration) -> ureq::Agent {
@@ -136,7 +136,7 @@ struct WriteConfigOut {
     restart_required: bool,
 }
 
-/// 設定を保存する。サービスが動いていれば API 経由、止まっていれば管理者権限で tsd.exe apply-config。
+/// 設定を保存する。サービスが動いていれば API 経由、止まっていれば管理者権限で parqlog apply-config。
 #[tauri::command]
 async fn write_config(config: Value) -> Result<WriteConfigOut, String> {
     blocking(move || {
@@ -151,9 +151,9 @@ async fn write_config(config: Value) -> Result<WriteConfigOut, String> {
             }
             Err(_) => {
                 let text = toml::to_string_pretty(&config).map_err(|e| format!("設定を TOML にできません: {e}"))?;
-                let tmp = std::env::temp_dir().join(format!("tsd-config-{}.toml", std::process::id()));
+                let tmp = std::env::temp_dir().join(format!("parqlog-config-{}.toml", std::process::id()));
                 std::fs::write(&tmp, text).map_err(|e| e.to_string())?;
-                let exe = tsd_exe().ok_or("tsd コマンドが見つかりません")?;
+                let exe = parqlog_exe().ok_or("parqlog コマンドが見つかりません")?;
                 let tmp_s = tmp.to_string_lossy().into_owned();
                 let cfg_s = config_path().to_string_lossy().into_owned();
                 let r = service::run_privileged(
@@ -213,7 +213,7 @@ async fn export_to_file(request: Value, path: String) -> Result<ExportOut, Strin
             let body: Value = res.body_mut().read_json().unwrap_or(Value::Null);
             return Err(body["message"].as_str().unwrap_or("エクスポートに失敗しました").to_string());
         }
-        let rows = res.headers().get("x-tsd-rows").and_then(|v| v.to_str().ok()).and_then(|s| s.parse().ok());
+        let rows = res.headers().get("x-parqlog-rows").and_then(|v| v.to_str().ok()).and_then(|s| s.parse().ok());
         let tmp = PathBuf::from(format!("{path}.part"));
         let mut out = std::fs::File::create(&tmp).map_err(|e| format!("保存先に書けません: {e}"))?;
         let mut reader = res.body_mut().with_config().limit(u64::MAX).reader();
@@ -278,7 +278,7 @@ fn check_health() -> (Health, String) {
     let svc = service::status();
     if svc.state != "unsupported" && svc.state != "running" {
         let s = if svc.installed { "サービス停止中" } else { "サービス未登録" };
-        return (Health::Down, format!("TSD: {s}"));
+        return (Health::Down, format!("parqlog: {s}"));
     }
     let url = format!("{}/api/status", api_base_url());
     match agent(Duration::from_secs(3)).get(&url).call() {
@@ -289,13 +289,13 @@ fn check_health() -> (Health, String) {
             let stale = v["devices"]["stale"].as_u64().unwrap_or(0);
             if warnings > 0 {
                 let first = v["warnings"][0].as_str().unwrap_or("");
-                (Health::Warn, format!("TSD: 注意 {warnings} 件\n{first}"))
+                (Health::Warn, format!("parqlog: 注意 {warnings} 件\n{first}"))
             } else {
                 let _ = stale;
-                (Health::Ok, format!("TSD: 正常（{rate:.0} 点/秒）"))
+                (Health::Ok, format!("parqlog: 正常（{rate:.0} 点/秒）"))
             }
         }
-        _ => (Health::Down, "TSD: サービスに接続できません".into()),
+        _ => (Health::Down, "parqlog: サービスに接続できません".into()),
     }
 }
 
@@ -310,7 +310,7 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
 
     TrayIconBuilder::with_id("main")
         .icon(tray_icon(Health::Down))
-        .tooltip("TSD")
+        .tooltip("parqlog")
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, ev| match ev.id.as_ref() {
@@ -394,5 +394,5 @@ pub fn run() {
             }
         })
         .run(tauri::generate_context!())
-        .expect("TSD アプリを起動できません");
+        .expect("parqlog アプリを起動できません");
 }

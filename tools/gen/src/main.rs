@@ -2,13 +2,13 @@
 //!
 //! ```text
 //! # サービス停止中のデータフォルダへ、5年分を直接書き込む（HTTP を通さない）
-//! tsd-gen backfill --data-dir ./data --raw-days 14 --m1-days 365 --h1-days 1826
+//! parqlog-gen backfill --data-dir ./data --raw-days 14 --m1-days 365 --h1-days 1826
 //!
 //! # 稼働中のサービスへ、装置10台×10項目を1秒ごとに送る
-//! tsd-gen live --url http://127.0.0.1:8086
+//! parqlog-gen live --url http://127.0.0.1:8086
 //!
 //! # 取り込み性能の計測（直近1時間の時刻で大量に送る）
-//! tsd-gen bench --url http://127.0.0.1:8086 --points 2000000
+//! parqlog-gen bench --url http://127.0.0.1:8086 --points 2000000
 //! ```
 //!
 //! 値は系列ごとに4種類のパターン（温度・圧力・運転状態・電流）を割り当てる。
@@ -21,12 +21,12 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tsd_core::lp::series_key;
-use tsd_core::time::*;
-use tsd_core::*;
+use parqlog_core::lp::series_key;
+use parqlog_core::time::*;
+use parqlog_core::*;
 
 #[derive(Parser)]
-#[command(name = "tsd-gen", about = "tsd の負荷試験用データ生成")]
+#[command(name = "parqlog-gen", about = "parqlog の負荷試験用データ生成")]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -133,14 +133,14 @@ fn backfill(
     compact_after: i64,
     force: bool,
 ) -> Result<()> {
-    if dir.join("tsd.duckdb").exists() {
+    if dir.join("parqlog.duckdb").exists() {
         if !force {
             bail!("{} には既にデータがあります（消してよければ --force）", dir.display());
         }
         for sub in ["raw", "1m"] {
             let _ = std::fs::remove_dir_all(dir.join(sub));
         }
-        for f in ["tsd.duckdb", "tsd.duckdb.wal"] {
+        for f in ["parqlog.duckdb", "parqlog.duckdb.wal"] {
             let _ = std::fs::remove_file(dir.join(f));
         }
     }
@@ -188,7 +188,7 @@ fn backfill(
              FROM gen_1m GROUP BY series_id, b",
         )?;
         if m < month_start(end) {
-            tsd_core::duck::copy_to_parquet(&w, "SELECT * FROM gen_1m ORDER BY series_id, bucket", &store.m1_path(m))?;
+            parqlog_core::duck::copy_to_parquet(&w, "SELECT * FROM gen_1m ORDER BY series_id, bucket", &store.m1_path(m))?;
         } else {
             w.execute_batch("INSERT INTO r1m_hot SELECT * FROM gen_1m")?;
         }
@@ -298,9 +298,9 @@ fn backfill(
             raw_q16.0, mb(per as u64), per / pts_day, gb((per * 365.0 * 4.0) as u64)
         );
     }
-    let m1: u64 = tsd_core::duck::list_m1_files(&dir).iter().map(|(_, p)| std::fs::metadata(p).map(|m| m.len()).unwrap_or(0)).sum();
+    let m1: u64 = parqlog_core::duck::list_m1_files(&dir).iter().map(|(_, p)| std::fs::metadata(p).map(|m| m.len()).unwrap_or(0)).sum();
     println!("1分集計ファイル: {:.1} MB", mb(m1));
-    println!("DuckDB ファイル: {:.1} MB", mb(std::fs::metadata(dir.join("tsd.duckdb")).map(|m| m.len()).unwrap_or(0)));
+    println!("DuckDB ファイル: {:.1} MB", mb(std::fs::metadata(dir.join("parqlog.duckdb")).map(|m| m.len()).unwrap_or(0)));
     Ok(())
 }
 

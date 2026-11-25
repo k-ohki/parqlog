@@ -1,9 +1,9 @@
 # Grafana 9 のデータソース設定（/etc/grafana/provisioning/datasources/ に置く）
-# tsd は Prometheus 互換 API を持つので、標準の Prometheus データソースで読める。
+# parqlog は Prometheus 互換 API を持つので、標準の Prometheus データソースで読める。
 apiVersion: 1
 datasources:
-  - name: tsd
-    uid: tsd
+  - name: parqlog
+    uid: parqlog
     type: prometheus
     access: proxy
     url: http://127.0.0.1:8086

@@ -213,7 +213,7 @@ impl DuckStore {
         std::fs::create_dir_all(opt.data_dir.join("1m"))?;
         cleanup_partial_files(&opt.data_dir);
 
-        let db_path = opt.data_dir.join("tsd.duckdb");
+        let db_path = opt.data_dir.join("parqlog.duckdb");
         let conn = Connection::open(&db_path)
             .with_context(|| format!("DuckDB を開けません（他のプロセスが使用中の可能性）: {}", db_path.display()))?;
         conn.execute_batch(&format!(
@@ -1253,21 +1253,21 @@ impl Store for DuckStore {
         let dest = dest.to_path_buf();
 
         // DuckDB ファイル: CHECKPOINT してから DuckDB 自身にコピーさせる（開いたままのファイルを直接コピーしない）
-        let tmp = dest.join("tsd.duckdb.tmp");
+        let tmp = dest.join("parqlog.duckdb.tmp");
         let _ = std::fs::remove_file(&tmp);
-        let _ = std::fs::remove_file(dest.join("tsd.duckdb.tmp.wal"));
+        let _ = std::fs::remove_file(dest.join("parqlog.duckdb.tmp.wal"));
         {
             let w = self.writer.lock();
             w.execute_batch("CHECKPOINT")?;
             let db: String = w.query_row("SELECT current_database()", [], |r| r.get(0))?;
             w.execute_batch(&format!(
-                "ATTACH {} AS tsd_backup; COPY FROM DATABASE \"{}\" TO tsd_backup; DETACH tsd_backup;",
+                "ATTACH {} AS parqlog_backup; COPY FROM DATABASE \"{}\" TO parqlog_backup; DETACH parqlog_backup;",
                 sql_path(&tmp),
                 db.replace('"', "\"\"")
             ))?;
         }
-        std::fs::rename(&tmp, dest.join("tsd.duckdb"))?;
-        rep.db_bytes = std::fs::metadata(dest.join("tsd.duckdb")).map(|m| m.len()).unwrap_or(0);
+        std::fs::rename(&tmp, dest.join("parqlog.duckdb"))?;
+        rep.db_bytes = std::fs::metadata(dest.join("parqlog.duckdb")).map(|m| m.len()).unwrap_or(0);
 
         // Parquet などは書き出し後に変更しないので差分コピー
         for sub in ["raw", "1m", "dashboards"] {
