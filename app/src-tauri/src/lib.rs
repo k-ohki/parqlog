@@ -18,7 +18,10 @@ use tauri::{AppHandle, Manager, WindowEvent};
 // ---- 設定ファイルの場所と API の URL -----------------------------------------
 
 fn config_path() -> PathBuf {
-    std::env::var("PARQLOG_CONFIG").map(PathBuf::from).unwrap_or_else(|_| PathBuf::from("/etc/parqlog/parqlog.toml"))
+    std::env::var("PARQLOG_CONFIG").map(PathBuf::from).unwrap_or_else(|_| {
+        // Windows は試用のみ（parqlog run と同じカレントフォルダの設定を見る想定）
+        PathBuf::from(if cfg!(windows) { "parqlog.toml" } else { "/etc/parqlog/parqlog.toml" })
+    })
 }
 
 fn read_config_file() -> Option<toml::Value> {

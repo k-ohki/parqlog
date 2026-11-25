@@ -103,7 +103,7 @@
       <h2>サービス</h2>
       {#if isTauri}
         {#if svc && svc.state === "unsupported"}
-          <p class="muted">systemctl が使えないため、サービスの操作はできません。</p>
+          <p class="muted">systemd が無い環境（Windows など）では、サービスの操作はできません。parqlog run をコンソールで動かしてください。</p>
         {:else if svc}
           <div class="svc">
             <span class="badge {svc.installed ? (svc.state === 'failed' ? 'stopped' : svc.state) : 'none'}">{svc.installed ? stateLabel[svc.state] : "未登録"}</span>
@@ -218,7 +218,7 @@
 
     {#if isTauri}
       <section class="card">
-        <h2>ログ（journalctl -u parqlog）</h2>
+        <h2>ログ</h2>
         <div class="row">
           <button onclick={loadLogs}>再読み込み</button>
           <label class="chk"><input type="checkbox" bind:checked={logAuto} /> 自動更新</label>

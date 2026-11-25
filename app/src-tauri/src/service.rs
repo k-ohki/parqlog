@@ -80,6 +80,9 @@ pub fn restart() -> Result<(), String> {
 
 /// サービスのログ（journald）の末尾
 pub fn log_tail(lines: usize) -> Result<String, String> {
+    if cfg!(windows) {
+        return Ok("Windows では parqlog run を実行しているコンソールにログが出ます。".into());
+    }
     let out = Command::new("journalctl")
         .args(["-u", UNIT, "-n", &lines.to_string(), "--no-pager", "-o", "short-iso"])
         .output()

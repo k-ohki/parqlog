@@ -21,7 +21,7 @@ use parqlog_core::{Config, CsvImportOptions, CsvLayout, DuckStore, Store};
 #[derive(Parser)]
 #[command(name = "parqlog", version, about = "時系列データの収集・保存・クエリを行うサービス")]
 struct Cli {
-    /// 設定ファイル（既定: /etc/parqlog/parqlog.toml）
+    /// 設定ファイル（既定: /etc/parqlog/parqlog.toml。Windows はカレントフォルダの parqlog.toml）
     #[arg(long, global = true)]
     config: Option<PathBuf>,
     #[command(subcommand)]
@@ -195,14 +195,30 @@ fn run_server(cfg: Config, path: PathBuf) -> Result<()> {
     let rt = tokio::runtime::Builder::new_multi_thread().enable_all().thread_name("parqlog-http").build()?;
     let data_dir = cfg.data_dir();
     let store: Arc<dyn Store> = store;
-    rt.block_on(parqlog_server::serve(cfg, path, store, data_dir, async {
+    rt.block_on(parqlog_server::serve(cfg, path, store, data_dir, shutdown_signal()))
+}
+
+/// Ctrl+C か SIGTERM（systemd の停止）を待つ
+async fn shutdown_signal() {
+    #[cfg(unix)]
+    {
         use tokio::signal::unix::{signal, SignalKind};
-        let mut term = signal(SignalKind::terminate()).expect("SIGTERM を待てません");
-        tokio::select! {
-            _ = tokio::signal::ctrl_c() => {}
-            _ = term.recv() => {}
+        match signal(SignalKind::terminate()) {
+            Ok(mut term) => {
+                tokio::select! {
+                    _ = tokio::signal::ctrl_c() => {}
+                    _ = term.recv() => {}
+                }
+            }
+            Err(_) => {
+                let _ = tokio::signal::ctrl_c().await;
+            }
         }
-    }))
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = tokio::signal::ctrl_c().await;
+    }
 }
 
 fn api_url(cfg: &Config, path: &str) -> String {

@@ -74,9 +74,13 @@ pub struct MonitorConfig {
     pub disk_warn_gb: u32,
 }
 
-/// 設定ファイルの既定の場所
+/// 設定ファイルの既定の場所（Windows は試用向けにカレントフォルダ）
 pub fn default_config_path() -> PathBuf {
-    PathBuf::from("/etc/parqlog/parqlog.toml")
+    if cfg!(windows) {
+        PathBuf::from("parqlog.toml")
+    } else {
+        PathBuf::from("/etc/parqlog/parqlog.toml")
+    }
 }
 
 impl Default for HttpConfig {
@@ -98,7 +102,7 @@ impl Default for AuthConfig {
 impl Default for StorageConfig {
     fn default() -> Self {
         Self {
-            data_dir: "/var/lib/parqlog".into(),
+            data_dir: if cfg!(windows) { "data".into() } else { "/var/lib/parqlog".into() },
             memory_limit: "1GB".into(),
             threads: 0,
         }

@@ -31,6 +31,30 @@ sudo sh deploy/install.sh                        # /usr/local/bin/parqlog、/etc
 
 ログは `journalctl -u parqlog -f`。詳しく出すときは `systemctl edit parqlog` で `Environment=PARQLOG_LOG=debug`。
 
+## Windows で試す（開発・お試し用）
+
+Windows では常駐（サービス化）はせず、コンソールで動かして試すだけを想定しています。
+
+```powershell
+# 必要なもの: Rust（MSVC）、Visual Studio Build Tools（C++）、Node.js 20 以降、WebView2（Windows 11 は標準）
+cargo build -p parqlog                    # 初回は DuckDB のビルドに 15〜30 分
+target\debug\parqlog init-config         # カレントフォルダに parqlog.toml を作る（データは .\data）
+target\debug\parqlog run                 # Ctrl+C で停止
+```
+
+画面は別のコンソールで、ブラウザか Tauri アプリのどちらかで開きます。
+
+```powershell
+cd app\ui
+npm install
+npm run dev     # ブラウザで http://localhost:1420 を開く
+npm run app     # Tauri アプリとして開く（初回は Rust のビルドに数分）
+```
+
+- 画面は `http://127.0.0.1:8086` の parqlog に接続します。
+- サービスの開始・停止とログ表示は systemd 専用なので、Windows では使えません（ログは `parqlog run` のコンソールに出ます）。
+- Windows での動作確認はまだしていません。
+
 ## データを入れる
 
 ### Telegraf
