@@ -1,0 +1,24 @@
+[Unit]
+Description=tsd 時系列データサービス
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tsd
+Group=tsd
+ExecStart=/usr/local/bin/tsd run --config /etc/tsd/tsd.toml
+Restart=on-failure
+RestartSec=5
+# 停止時はバッファを書き切ってからチェックポイントする
+TimeoutStopSec=60
+LimitNOFILE=65536
+# データフォルダ以外は書けないようにする
+ProtectSystem=strict
+ReadWritePaths=/var/lib/tsd /etc/tsd
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

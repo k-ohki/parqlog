@@ -1,0 +1,16 @@
+# Grafana 9 のデータソース設定（/etc/grafana/provisioning/datasources/ に置く）
+# tsd は Prometheus 互換 API を持つので、標準の Prometheus データソースで読める。
+apiVersion: 1
+datasources:
+  - name: tsd
+    uid: tsd
+    type: prometheus
+    access: proxy
+    url: http://127.0.0.1:8086
+    isDefault: true
+    jsonData:
+      httpMethod: POST
+      # 1秒データなので最小の間隔を 1s にする（$__interval の下限）
+      timeInterval: 1s
+      prometheusType: Prometheus
+      prometheusVersion: 2.40.0

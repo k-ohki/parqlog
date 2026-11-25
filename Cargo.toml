@@ -1,0 +1,43 @@
+[workspace]
+resolver = "2"
+members = ["crates/tsd-core", "crates/tsd-server", "crates/tsd", "tools/gen"]
+# app/src-tauri は Windows 専用ビルドのため別ワークスペース扱い（app/src-tauri/Cargo.toml を参照）
+exclude = ["app/src-tauri"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+rust-version = "1.85"
+
+[workspace.dependencies]
+# DuckDB 本体の版を固定する（1.20001.x = DuckDB 2.0.1）
+duckdb = { version = "~1.20001.0", features = ["bundled", "parquet", "chrono"] }
+anyhow = "1"
+thiserror = "2"
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.9"
+tokio = { version = "1", features = ["full"] }
+axum = "0.8"
+tower-http = { version = "0.6", features = ["decompression-gzip", "cors", "trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+parking_lot = "0.12"
+flate2 = "1"
+clap = { version = "4", features = ["derive"] }
+rand = "0.9"
+
+[profile.release]
+lto = "thin"
+codegen-units = 4
+
+# DuckDB（C++）はデバッグ情報なしで最適化してビルドする（ディスク使用量と実行速度のため）
+[profile.dev]
+opt-level = 1
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+opt-level = 2
+debug = false

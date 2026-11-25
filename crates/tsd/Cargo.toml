@@ -1,0 +1,21 @@
+[package]
+name = "tsd"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "時系列データの収集・保存・クエリを行うサービス"
+
+[[bin]]
+name = "tsd"
+path = "src/main.rs"
+
+[dependencies]
+tsd-core = { path = "../tsd-core" }
+tsd-server = { path = "../tsd-server" }
+anyhow.workspace = true
+clap.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+serde_json.workspace = true
+ureq = { version = "3", default-features = false, features = ["json"] }

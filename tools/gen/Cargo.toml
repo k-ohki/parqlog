@@ -1,0 +1,13 @@
+[package]
+name = "tsd-gen"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "負荷試験用の合成データ生成（5年分の一括投入と、HTTP での送信）"
+
+[dependencies]
+tsd-core = { path = "../../crates/tsd-core" }
+anyhow.workspace = true
+clap.workspace = true
+ureq = { version = "3", default-features = false, features = ["gzip"] }
+flate2.workspace = true
